@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw | Your Personal AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0b;
+            --card-dark: #161618;
+            --coral: #F27166;
+            --teal: #89B9AD;
+            --brand-red: #ef4444; /* Tailwind red-500 */
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            scroll-behavior: smooth;
+            margin: 0;
+            padding: 0;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--coral) 0%, var(--teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--coral) 0%, var(--teal) 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 30px rgba(242, 113, 102, 0.15);
+        }
+        .modal-hidden { display: none !important; }
+        
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Responsive adjustments for the slogan/price ratio */
+        .slogan-text { font-size: 3rem; line-height: 1.1; }
+        .price-text { font-size: 1.5rem; }
+
+        @media (min-width: 768px) {
+            .slogan-text { font-size: 5rem; }
+            .price-text { font-size: 2.5rem; }
+        }
+
+        #submit-status.success { color: #89B9AD; }
+        #submit-status.error { color: #F27166; }
+    </style>
+</head>
+<body class="antialiased selection:bg-red-500/30">
+
+    <!-- Application Modal -->
+    <div id="leadModal" class="modal-hidden fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-6">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" onclick="toggleModal()"></div>
+        <div class="relative w-full max-w-lg glass-card p-8 md:p-12 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl modal-content border border-white/10">
+            <h3 class="text-2xl md:text-3xl font-extrabold mb-2 text-white text-center">Apply for <span class="gradient-text">Setup.</span></h3>
+            <div id="form-container">
+                <p class="text-gray-400 mb-8 text-sm leading-relaxed text-center">I will review your request and contact you via email to schedule your 1-hour deployment session.</p>
+                
+                <form id="applyForm" class="space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                        <input type="text" name="name" id="form-name" placeholder="John Doe" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-red-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Email Address</label>
+                        <input type="email" name="email" id="form-email" placeholder="john@example.com" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-red-500 transition">
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full py-5 gradient-bg text-black font-extrabold rounded-xl hover:opacity-90 transition shadow-lg uppercase tracking-widest text-sm">Send Application</button>
+                    <p id="submit-status" class="text-center text-xs font-bold mt-4"></p>
+                </form>
+            </div>
+            
+            <div id="success-container" class="hidden text-center py-10">
+                <div class="w-20 h-20 bg-[#89B9AD]/20 rounded-full flex items-center justify-center mx-auto mb-6 text-[#89B9AD]">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h4 class="text-2xl font-bold mb-2">Application Sent!</h4>
+                <p class="text-gray-400 text-sm">Check your inbox soon for instructions.</p>
+            </div>
+
+            <button onclick="toggleModal()" class="mt-8 w-full text-gray-600 text-[10px] uppercase tracking-widest font-bold hover:text-white transition">Dismiss</button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 px-6 py-4 bg-[#0a0a0b]/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="#ef4444" />
+                    <circle cx="35" cy="40" r="6" fill="#0D0D0D" />
+                    <circle cx="65" cy="40" r="6" fill="#0D0D0D" />
+                    <path d="M40 70C40 70 45 75 50 75C55 75 60 70 60 70" stroke="#0D0D0D" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+                <span class="font-extrabold text-lg md:text-xl tracking-tighter text-red-500">OpenClaw<span class="text-[#89B9AD]">.</span></span>
+            </div>
+            <div class="hidden lg:flex space-x-8 text-sm font-medium text-gray-400">
+                <a href="#features" class="hover:text-white transition">Capabilities</a>
+                <a href="#hetzner" class="hover:text-white transition">Infrastructure</a>
+                <a href="#pricing" class="hover:text-white transition">Pricing</a>
+            </div>
+            <button onclick="toggleModal()" class="px-5 py-2 rounded-full border border-[#89B9AD] text-[#89B9AD] text-sm font-bold hover:bg-[#89B9AD] hover:text-[#0a0a0b] transition duration-300">
+                Apply Now
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-40 md:pt-56 pb-24 px-6 overflow-hidden text-center">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[400px] bg-red-500/10 blur-[100px] md:blur-[150px] rounded-full -z-10"></div>
+        <div class="max-w-4xl mx-auto">
+            <div class="inline-block px-4 py-1.5 mb-8 rounded-full glass-card text-[10px] font-bold tracking-[0.2em] uppercase text-[#89B9AD]">
+                Personal Assistant Deployment • Exclusive Society
+            </div>
+            <h1 class="text-5xl md:text-7xl lg:text-[6rem] font-extrabold mb-8 tracking-tighter leading-[1] md:leading-[0.9]">
+                <span class="gradient-text">Your</span> <span class="text-red-500">Openclaw</span><span class="gradient-text">,</span> <br class="hidden sm:block"/>
+                <span class="gradient-text text-[0.7em] block">Personal Assistant.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                Utilizing the latest agentic architecture from <a href="https://openclaw.ai/" target="_blank" class="text-white border-b border-white/20 hover:border-white transition">openclaw.ai</a>. I deploy your private brain to Hetzner Cloud for 24/7 automated intelligence.
+            </p>
+            
+            <button onclick="toggleModal()" class="w-full sm:w-auto px-16 py-6 gradient-bg text-black font-extrabold rounded-2xl text-xl shadow-2xl glow-hover transition-all uppercase tracking-widest">
+                Apply for Setup
+            </button>
+        </div>
+    </section>
+
+    <!-- Capabilities -->
+    <section id="features" class="py-24 px-6 border-t border-white/5">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-16 text-center text-white italic">"What can your assistant do?"</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-card p-10 rounded-[2.5rem] border-white/5 hover:border-[#89B9AD]/30 transition duration-500 group">
+                    <div class="w-12 h-12 bg-[#89B9AD]/10 rounded-2xl flex items-center justify-center mb-8 text-[#89B9AD] group-hover:bg-[#89B9AD] group-hover:text-black transition">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <h3 class="text-white font-bold mb-4 text-xl">Smart Search</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Request a deep analysis on any topic. Your assistant <strong>searches sources</strong> across the live web to provide instant, verified summaries.</p>
+                </div>
+                <div class="glass-card p-10 rounded-[2.5rem] border-white/5 hover:border-[#F27166]/30 transition duration-500 group">
+                    <div class="w-12 h-12 bg-[#F27166]/10 rounded-2xl flex items-center justify-center mb-8 text-[#F27166] group-hover:bg-[#F27166] group-hover:text-black transition">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </div>
+                    <h3 class="text-white font-bold mb-4 text-xl">Monitoring</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Set and forget. Command your agent to <strong>search sources</strong> for updates in your industry, tracking niche news or forum discussions for you.</p>
+                </div>
+                <div class="glass-card p-10 rounded-[2.5rem] border-white/5 hover:border-white/30 transition duration-500 group">
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-8 text-white group-hover:bg-white group-hover:text-black transition">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-white font-bold mb-4 text-xl">Deal Scouting</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Let your assistant <strong>search sources</strong> for the best flight options or limited retail deals while you focus on higher-value work.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Infrastructure -->
+    <section id="hetzner" class="py-24 px-6 border-y border-white/5 bg-[#0a0a0b]">
+        <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-8 text-white leading-tight">Elite Cloud. <br/> <span class="text-[#89B9AD]">Private Control.</span></h2>
+                <p class="text-gray-300 mb-10 font-light text-lg leading-relaxed text-balance">We move your assistant into a professional <strong>Hetzner Cloud</strong> environment. Unlike local setups, your agent stays awake, secure, and ready 24/7.</p>
+                <div class="space-y-6">
+                    <div class="flex items-center group">
+                        <div class="bg-[#89B9AD]/20 p-2 rounded-lg mr-5 text-[#89B9AD] group-hover:scale-110 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <span class="text-gray-200 font-medium">Hardened VPS Architecture</span>
+                    </div>
+                    <div class="flex items-center group">
+                        <div class="bg-[#89B9AD]/20 p-2 rounded-lg mr-5 text-[#89B9AD] group-hover:scale-110 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <span class="text-gray-200 font-medium">Docker-Optimized Core</span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card p-10 rounded-[3rem] border-[#89B9AD]/10 relative">
+                <div class="absolute -top-3 -right-3 md:-top-4 md:-right-4 bg-[#89B9AD] text-black text-[9px] md:text-[10px] font-black px-3 md:px-4 py-1.5 md:py-2 rounded-full uppercase tracking-widest">Premium Build</div>
+                <h3 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-[#F27166]">Always Connected</h3>
+                <p class="text-gray-300 font-light text-sm mb-6 md:mb-8 leading-relaxed">OpenClaw lives on Telegram. Text your assistant to <strong>search sources</strong>, summarize articles, or find data while you're on the move.</p>
+                <div class="bg-black/60 p-4 md:p-6 rounded-2xl border border-white/10 font-mono text-[10px] md:text-xs overflow-x-auto">
+                    <div class="flex space-x-3 mb-3 whitespace-nowrap">
+                        <span class="text-gray-500 shrink-0">System:</span>
+                        <span class="text-white">Searching sources for "latest AI news"...</span>
+                    </div>
+                    <div class="flex space-x-3 whitespace-nowrap">
+                        <span class="text-[#89B9AD] shrink-0">Agent:</span>
+                        <span class="text-gray-300">Done. Summarizing results now.</span>
+                    </div>
+                </div>
+                <p class="mt-8 text-gray-500 text-[10px] uppercase tracking-[0.2em] text-center font-bold">Encrypted Webhook Integration</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-32 px-6">
+        <div class="max-w-4xl mx-auto bg-[#161618] border border-white/10 rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-24 text-center shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <h2 class="slogan-text font-extrabold italic text-white mb-2">"Need a hand?</h2>
+            <h2 class="slogan-text font-extrabold italic text-white mb-10">Get a Claw!"</h2>
+            
+            <div class="h-1.5 w-24 gradient-bg mx-auto mb-10 md:mb-12 rounded-full opacity-80"></div>
+            
+            <div class="mb-16">
+                <span class="price-text font-black tracking-tighter text-white opacity-90">$189</span>
+                <p class="text-gray-400 mt-4 text-[10px] md:text-xs font-bold tracking-[0.4em] uppercase text-center">Implementation Fee</p>
+            </div>
+
+            <div class="max-w-sm mx-auto text-left space-y-10 mb-20">
+                <div class="flex items-start group">
+                    <span class="text-[#F27166] font-black text-xl mr-8 group-hover:scale-125 transition">01.</span>
+                    <p class="text-gray-300 text-sm leading-relaxed">Apply with your email. No payment info required yet.</p>
+                </div>
+                <div class="flex items-start group">
+                    <span class="text-[#F27166] font-black text-xl mr-8 group-hover:scale-125 transition">02.</span>
+                    <p class="text-gray-300 text-sm leading-relaxed">I'll send e-mail with instructions and schedule our setup hour.</p>
+                </div>
+                <div class="flex items-start group">
+                    <span class="text-[#F27166] font-black text-xl mr-8 group-hover:scale-125 transition">03.</span>
+                    <p class="text-gray-300 text-sm leading-relaxed">We meet remotely to deploy and activate your agent.</p>
+                </div>
+            </div>
+
+            <button onclick="toggleModal()" class="w-full py-6 md:py-8 rounded-[2rem] bg-white text-black font-extrabold text-xl md:text-2xl hover:bg-gray-200 transition-all shadow-xl active:scale-95">
+                Start My Application
+            </button>
+            <p class="mt-10 text-gray-500 text-[10px] uppercase font-bold tracking-[0.3em] px-4 opacity-60 text-center">
+                Limited Society Enrollment • MSc Data Science Expertise
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 px-6 border-t border-white/5 text-center bg-black">
+        <div class="flex justify-center items-center space-x-3 mb-10 opacity-60">
+            <svg width="24" height="24" viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="45" fill="#ef4444" />
+                <circle cx="35" cy="40" r="6" fill="#0D0D0D" />
+                <circle cx="65" cy="40" r="6" fill="#0D0D0D" />
+            </svg>
+            <span class="font-bold text-xs tracking-[0.4em] uppercase text-red-500">OpenClaw Society</span>
+        </div>
+        <div class="space-y-4">
+            <p class="text-gray-600 text-[10px] tracking-widest uppercase font-bold">Personal AI Architect</p>
+            <p class="text-gray-300 text-[9px] tracking-[0.2em] uppercase max-w-sm mx-auto leading-relaxed">
+                Professional MSc Data Science implementation. All agents are private, secure, and dedicated to their owner.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzCoZOAwf_MJK0s0ErZC9a49ip4CXz1p7aKwaG6raDwe_egEGKWhw_AE88LxQ8HEtAtg/exec';
+
+        function toggleModal() {
+            const modal = document.getElementById('leadModal');
+            modal.classList.toggle('modal-hidden');
+            if (!modal.classList.contains('modal-hidden')) {
+                document.body.style.overflow = 'hidden';
+                document.getElementById('form-container').classList.remove('hidden');
+                document.getElementById('success-container').classList.add('hidden');
+                document.getElementById('submit-status').innerText = '';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        const form = document.getElementById('applyForm');
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('submit-status');
+            
+            btn.disabled = true;
+            btn.innerText = 'Sending...';
+            status.innerText = '';
+
+            const formData = new FormData(form);
+            const queryString = new URLSearchParams(formData).toString();
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: queryString
+            })
+            .then(() => {
+                document.getElementById('form-container').classList.add('hidden');
+                document.getElementById('success-container').classList.remove('hidden');
+            })
+            .catch(err => {
+                console.error(err);
+                status.innerText = 'Error sending. Please try again.';
+                status.classList.add('error');
+                btn.disabled = false;
+                btn.innerText = 'Send Application';
+            });
+        });
+    </script>
+</body>
+</html>
